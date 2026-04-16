@@ -48,6 +48,11 @@ docker-compose.override.yml
 # Python
 __pycache__/
 *.py[cod]
+
+# Personal documentation (interview prep, learning notes)
+ARCHITECTURE_DECISIONS.md
+GIT_WORKFLOW.md
+.claude/
 *$py.class
 *.so
 .Python

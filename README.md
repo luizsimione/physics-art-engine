@@ -1,12 +1,22 @@
-# Generative Physics Art Engine (Oscilloscope UI)
+# Generative Physics Art Engine
 
-A distributed system that generates physics-based artwork using a high-performance C++ N-body simulation engine, orchestrated via NestJS backend, streamed in real-time via WebSockets, and visualized through an oscilloscope-style interface using React + Three.js.
+A modular system that generates physics-based artwork using a high-performance C++ N-body simulation engine, orchestrated via NestJS backend with async job processing, designed for real-time WebSocket streaming and oscilloscope-style visualization.
+
+## Documentation
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow and branching strategy
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - AWS deployment guide
+- [docs/README_PRODUCTION.md](docs/README_PRODUCTION.md) - Production setup and API reference
 
 ## Project Overview
 
-This system supports:
-- **Batch generation**: Store and retrieve generated art via job queue
-- **Real-time streaming**: Live oscilloscope-style visualization of physics simulations
+**Current Status:** Backend complete, frontend planned
+
+**Features:**
+- **Batch generation**: Async job queue for C++ simulation execution
+- **Job management**: REST API with status tracking, retry logic, persistence
+- **Real-time streaming**: WebSocket visualization (next milestone)
+- **Oscilloscope UI**: Retro CRT aesthetic with Three.js (planned)
 
 ### Architecture
 
@@ -67,31 +77,42 @@ clang++ -std=c++17 -O3 -I./include -o sim src/main.cpp src/simulation.cpp
 - CLI interface with argument parsing
 - Two output modes: batch (JSON array) and stream (line-by-line JSON)
 
-### Phase 2: Backend API (IN PROGRESS)
+### Phase 2: Backend API (COMPLETED)
 
 ```bash
-# Navigate to backend
+# Quick start with development script
+./scripts/dev.sh
+
+# Or manual setup:
 cd backend
-
-# Install dependencies
 npm install
-
-# Setup environment
-cp .env.example .env
-# Edit .env with your database and Redis credentials
-
-# Run migrations
-npm run migration:run
 
 # Start development server
 npm run start:dev
 
 # Available endpoints:
-# POST /generate - Create simulation job
-# GET /art/:id - Retrieve simulation results
-# GET /jobs - List all jobs
-# WebSocket /stream - Real-time streaming
+# GET /              - API status
+# GET /health        - Health check
+# POST /generate     - Create simulation job
+# GET /art/:id       - Retrieve simulation results
+# GET /jobs          - List all jobs
+# GET /jobs/:id/status - Get job status
+
+# WebSocket /stream - (Planned for Phase 3)
 ```
+
+**What's implemented:**
+- NestJS backend with TypeScript
+- PostgreSQL + TypeORM (auto-migrations)
+- Redis + BullMQ job queue with retry logic
+- C++ process spawner service
+- REST API with 6 endpoints
+- Input validation (class-validator)
+- Error handling and status tracking
+- Docker Compose for local development
+- GitHub Actions CI/CD pipeline
+- Unit tests (12 tests passing)
+- Husky pre-commit hooks (lint + test)
 
 ### Phase 3: Frontend (PLANNED)
 
@@ -163,28 +184,32 @@ physics-art-engine/
 └── README.md               # This file
 ```
 
-## Implementation Steps
+## Implementation Status
 
 ### Milestone 1: C++ Physics Engine (COMPLETED)
 - [x] Implement Vector2D math utilities
 - [x] Create Particle struct with position, velocity, mass
-- [x] Implement N-body gravitational force calculation
+- [x] Implement N-body gravitational force calculation (O(N²))
 - [x] Add Euler integration time-stepping
 - [x] Implement deterministic seeding with std::mt19937
 - [x] Create CLI interface with argument parsing
 - [x] Add batch and stream output modes
 - [x] Build and test standalone engine
 
-### Milestone 2: Backend API (IN PROGRESS)
-- [ ] Initialize NestJS project
-- [ ] Setup PostgreSQL with TypeORM entities
-- [ ] Implement BullMQ job queue
-- [ ] Create C++ process spawner service
-- [ ] Build REST endpoints (POST /generate, GET /art/:id)
-- [ ] Add error handling and validation
-- [ ] Store simulation outputs to filesystem
+### Milestone 2: Backend API (COMPLETED)
+- [x] Initialize NestJS project with TypeScript
+- [x] Setup PostgreSQL with TypeORM entities and auto-migrations
+- [x] Implement BullMQ job queue with retry logic (3 attempts, exponential backoff)
+- [x] Create C++ process spawner service with stdio parsing
+- [x] Build REST endpoints (POST /generate, GET /art/:id, GET /jobs, GET /health)
+- [x] Add comprehensive error handling and input validation
+- [x] Store simulation outputs to filesystem
+- [x] Add Docker containerization (dev + prod)
+- [x] Setup GitHub Actions CI/CD pipeline
+- [x] Add unit tests and E2E testing
+- [x] Configure Husky pre-commit hooks (lint + test + type-check)
 
-### Milestone 3: WebSocket Streaming (PLANNED)
+### Milestone 3: WebSocket Streaming (NEXT)
 - [ ] Integrate WebSocket gateway in NestJS
 - [ ] Implement real-time streaming orchestration
 - [ ] Add frame throttling (30 FPS)
@@ -193,7 +218,7 @@ physics-art-engine/
 
 ### Milestone 4: Oscilloscope Frontend (PLANNED)
 - [ ] Initialize React + Vite + TypeScript
-- [ ] Setup Three.js scene with black background + green lines
+- [ ] Setup Three.js scene with CRT oscilloscope aesthetic
 - [ ] Implement WebSocket client connection
 - [ ] Build 3 rendering modes:
   - [ ] Waveform Mode (X position over time)
@@ -202,12 +227,12 @@ physics-art-engine/
 - [ ] Add control panel (start/stop, seed, mode toggle)
 - [ ] Optimize rendering with sliding window buffer
 
-### Milestone 5: Docker Orchestration (PLANNED)
-- [ ] Create Dockerfiles for each service
-- [ ] Write docker-compose.yml
-- [ ] Configure service networking
-- [ ] Add health checks
-- [ ] Test end-to-end deployment
+### Milestone 5: Docker Orchestration (COMPLETED)
+- [x] Create Dockerfiles for each service
+- [x] Write docker-compose.yml
+- [x] Configure service networking
+- [x] Add health checks
+- [x] Test end-to-end deployment
 
 ### Milestone 6: Python ML Layer (OPTIONAL)
 - [ ] Setup FastAPI service
