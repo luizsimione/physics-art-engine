@@ -2,7 +2,7 @@
 
 A distributed system that generates physics-based artwork using a high-performance C++ N-body simulation engine, orchestrated via NestJS backend, streamed in real-time via WebSockets, and visualized through an oscilloscope-style interface using React + Three.js.
 
-## 🎯 Project Overview
+## Project Overview
 
 This system supports:
 - **Batch generation**: Store and retrieve generated art via job queue
@@ -30,7 +30,7 @@ This system supports:
                          └────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -40,7 +40,7 @@ This system supports:
 - **PostgreSQL**: v14+ (or use Docker)
 - **Redis**: v6+ (or use Docker)
 
-### Phase 1: C++ Simulation Engine (✅ COMPLETED)
+### Phase 1: C++ Simulation Engine (COMPLETED)
 
 ```bash
 # Navigate to simulation engine
@@ -60,14 +60,14 @@ clang++ -std=c++17 -O3 -I./include -o sim src/main.cpp src/simulation.cpp
 ```
 
 **Features Implemented:**
-- ✅ Vector2D math utilities
-- ✅ N-body particle system with gravity
-- ✅ Deterministic seeding (same seed = same output)
-- ✅ Euler integration time-stepping
-- ✅ CLI interface with argument parsing
-- ✅ Two output modes: batch (JSON array) and stream (line-by-line JSON)
+- Vector2D math utilities
+- N-body particle system with gravity
+- Deterministic seeding (same seed = same output)
+- Euler integration time-stepping
+- CLI interface with argument parsing
+- Two output modes: batch (JSON array) and stream (line-by-line JSON)
 
-### Phase 2: Backend API (🚧 IN PROGRESS)
+### Phase 2: Backend API (IN PROGRESS)
 
 ```bash
 # Navigate to backend
@@ -93,7 +93,7 @@ npm run start:dev
 # WebSocket /stream - Real-time streaming
 ```
 
-### Phase 3: Frontend (📋 PLANNED)
+### Phase 3: Frontend (PLANNED)
 
 ```bash
 # Navigate to frontend
@@ -122,7 +122,7 @@ docker-compose up
 # Redis: localhost:6379
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 physics-art-engine/
@@ -163,9 +163,9 @@ physics-art-engine/
 └── README.md               # This file
 ```
 
-## 🔬 Implementation Steps
+## Implementation Steps
 
-### ✅ Milestone 1: C++ Physics Engine (COMPLETED)
+### Milestone 1: C++ Physics Engine (COMPLETED)
 - [x] Implement Vector2D math utilities
 - [x] Create Particle struct with position, velocity, mass
 - [x] Implement N-body gravitational force calculation
@@ -175,7 +175,7 @@ physics-art-engine/
 - [x] Add batch and stream output modes
 - [x] Build and test standalone engine
 
-### 🚧 Milestone 2: Backend API (IN PROGRESS)
+### Milestone 2: Backend API (IN PROGRESS)
 - [ ] Initialize NestJS project
 - [ ] Setup PostgreSQL with TypeORM entities
 - [ ] Implement BullMQ job queue
@@ -184,14 +184,14 @@ physics-art-engine/
 - [ ] Add error handling and validation
 - [ ] Store simulation outputs to filesystem
 
-### 📋 Milestone 3: WebSocket Streaming (PLANNED)
+### Milestone 3: WebSocket Streaming (PLANNED)
 - [ ] Integrate WebSocket gateway in NestJS
 - [ ] Implement real-time streaming orchestration
 - [ ] Add frame throttling (30 FPS)
 - [ ] Handle backpressure and client disconnects
 - [ ] Test concurrent streaming sessions
 
-### 📋 Milestone 4: Oscilloscope Frontend (PLANNED)
+### Milestone 4: Oscilloscope Frontend (PLANNED)
 - [ ] Initialize React + Vite + TypeScript
 - [ ] Setup Three.js scene with black background + green lines
 - [ ] Implement WebSocket client connection
@@ -202,21 +202,21 @@ physics-art-engine/
 - [ ] Add control panel (start/stop, seed, mode toggle)
 - [ ] Optimize rendering with sliding window buffer
 
-### 📋 Milestone 5: Docker Orchestration (PLANNED)
+### Milestone 5: Docker Orchestration (PLANNED)
 - [ ] Create Dockerfiles for each service
 - [ ] Write docker-compose.yml
 - [ ] Configure service networking
 - [ ] Add health checks
 - [ ] Test end-to-end deployment
 
-### 📋 Milestone 6: Python ML Layer (OPTIONAL)
+### Milestone 6: Python ML Layer (OPTIONAL)
 - [ ] Setup FastAPI service
 - [ ] Implement feature extraction (velocity, entropy)
 - [ ] Train KMeans clustering on simulation data
 - [ ] Create parameter generation endpoint
 - [ ] Integrate with backend workflow
 
-## 🧪 Testing & Verification
+## Testing & Verification
 
 ### C++ Engine Tests
 
@@ -250,7 +250,7 @@ curl http://localhost:3001/art/:jobId
 curl http://localhost:3001/jobs
 ```
 
-## 🎨 Visualization Modes
+## Visualization Modes
 
 ### 1. Waveform Mode
 Plot the X-position of particles over time, creating a scrolling oscilloscope trace.
@@ -261,7 +261,7 @@ Display multiple particles as stacked horizontal traces, like a multi-channel os
 ### 3. Vector Scope Mode
 Plot X vs Y positions directly, creating Lissajous-style patterns similar to vectorscope displays.
 
-## 🔧 Configuration
+## Configuration
 
 ### Simulation Parameters
 
@@ -279,7 +279,7 @@ Plot X vs Y positions directly, creating Lissajous-style patterns similar to vec
 - **Softening Parameter**: 0.1 (prevents singularities)
 - **Integration Method**: Euler (upgradeable to RK4)
 
-## 🚀 Deployment
+## Deployment
 
 ### Local Development
 
@@ -311,7 +311,7 @@ docker-compose down
 docker-compose down -v
 ```
 
-## 📊 Performance Considerations
+## Performance Considerations
 
 ### C++ Simulation
 - **Complexity**: O(N²) per time step for N particles
@@ -333,7 +333,7 @@ docker-compose down -v
 - **Techniques**: requestAnimationFrame, WebGL hardware acceleration
 - **Optimizations**: Instanced rendering, custom shaders
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -347,7 +347,7 @@ docker-compose down -v
 | ML Layer | Python + FastAPI + scikit-learn | Parameter generation (future) |
 | Deployment | Docker + Docker Compose | Containerization |
 
-## 📝 API Reference
+## API Reference
 
 ### REST Endpoints
 
@@ -410,7 +410,7 @@ Retrieve simulation results.
 }
 ```
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 - [ ] GPU acceleration with CUDA/OpenCL
 - [ ] Genetic algorithms for art evolution
@@ -423,11 +423,11 @@ Retrieve simulation results.
 - [ ] WebGL custom shaders for visual effects
 - [ ] Performance analytics dashboard
 
-## 📄 License
+## License
 
 MIT
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built as a demonstration of distributed systems design, combining high-performance computing, real-time streaming, and interactive visualization.
 

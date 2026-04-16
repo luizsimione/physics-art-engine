@@ -1,0 +1,284 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_VERSION: '14'
+
+jobs:
+  # Linting and formatting checks
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Check Prettier formatting
+        working-directory: ./backend
+        run: npx prettier --check "src/**/*.ts"
+
+      - name: TypeScript type checking
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+  # C++ Simulation Engine tests
+  simulation-engine:
+    name: C++ Simulation Engine
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install C++ compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-14 cmake
+
+      - name: Build simulation engine
+        working-directory: ./simulation-engine
+        run: |
+          clang++-14 -std=c++17 -O3 -I./include -o sim src/main.cpp src/simulation.cpp
+
+      - name: Test simulation (batch mode)
+        working-directory: ./simulation-engine
+        run: |
+          ./sim --particles 10 --steps 10 --seed 42 --mode batch > output.json
+          # Verify output is valid JSON
+          cat output.json | jq . > /dev/null
+
+      - name: Test simulation (stream mode)
+        working-directory: ./simulation-engine
+        run: |
+          ./sim --particles 5 --steps 3 --seed 42 --mode stream > stream.json
+          # Verify we got multiple JSON objects
+          [ $(wc -l < stream.json) -eq 3 ]
+
+      - name: Test determinism
+        working-directory: ./simulation-engine
+        run: |
+          ./sim --particles 10 --steps 10 --seed 123 --mode batch > test1.json
+          ./sim --particles 10 --steps 10 --seed 123 --mode batch > test2.json
+          diff test1.json test2.json
+
+      - name: Upload simulation binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-binary
+          path: simulation-engine/sim
+          retention-days: 7
+
+  # Backend unit and integration tests
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: physics_art_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/physics_art_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: npm test -- --coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  # Build and verify Docker images
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [lint, simulation-engine, backend-test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build simulation engine binary
+        working-directory: ./simulation-engine
+        run: |
+          clang++ -std=c++17 -O3 -I./include -o sim src/main.cpp src/simulation.cpp
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: physics-art-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker Compose
+        run: |
+          docker compose -f docker-compose.yml config
+
+  # Integration tests with full stack
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build C++ simulation
+        working-directory: ./simulation-engine
+        run: |
+          clang++ -std=c++17 -O3 -I./include -o sim src/main.cpp src/simulation.cpp
+
+      - name: Start services
+        run: |
+          docker compose -f docker-compose.dev.yml up -d
+          sleep 10
+
+      - name: Wait for services
+        run: |
+          timeout 30 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
+          timeout 30 bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Start backend
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/physics_art
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SIMULATION_BINARY_PATH: ../simulation-engine/sim
+        run: |
+          npm run start:dev &
+          sleep 15
+
+      - name: Test API health
+        run: |
+          curl -f http://localhost:3001/health || exit 1
+          curl -f http://localhost:3001/ | jq .
+
+      - name: Test simulation job creation
+        run: |
+          RESPONSE=$(curl -s -X POST http://localhost:3001/generate \
+            -H "Content-Type: application/json" \
+            -d '{"numParticles": 10, "steps": 10, "seed": 42}')
+          echo $RESPONSE | jq .
+          JOB_ID=$(echo $RESPONSE | jq -r .jobId)
+          echo "Created job: $JOB_ID"
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down
+
+  # Deployment to production (only on main branch)
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [e2e-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: physics-art-backend
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      # Add your deployment steps here (ECS, EKS, EC2, etc.)
+      - name: Deploy to ECS
+        run: |
+          echo "Deploy to ECS/EKS/EC2 here"
+          # aws ecs update-service --cluster physics-art --service backend --force-new-deployment
