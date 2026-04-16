@@ -1,0 +1,6 @@
+build/
+*.o
+*.a
+sim
+*.json
+.DS_Store
