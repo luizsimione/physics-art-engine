@@ -150,11 +150,42 @@ jobs:
           flags: backend
           name: backend-coverage
 
+      - name: Save coverage for SonarCloud
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: backend/coverage
+          retention-days: 1
+
+  # Code quality analysis with SonarCloud
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [backend-test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: backend/coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   # Build and verify Docker images
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [lint, simulation-engine, backend-test]
+    needs: [lint, simulation-engine, backend-test, sonarcloud]
     
     steps:
       - name: Checkout code
