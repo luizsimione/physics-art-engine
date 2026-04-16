@@ -1,0 +1,27 @@
+{
+  "name": "physics-art-engine",
+  "version": "1.0.0",
+  "description": "A modular system that generates physics-based artwork using a high-performance C++ N-body simulation engine, orchestrated via NestJS backend with async job processing, designed for real-time WebSocket streaming and oscilloscope-style visualization.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luizsimione/physics-art-engine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/luizsimione/physics-art-engine/issues"
+  },
+  "homepage": "https://github.com/luizsimione/physics-art-engine#readme",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

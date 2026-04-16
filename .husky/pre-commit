@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Navigate to backend and run quality checks
+cd backend
+
+# Run lint-staged (format + lint checks with 0 warnings allowed)
+npx lint-staged
+
+# Run TypeScript type checking
+npx tsc --noEmit
+
+# Run tests to ensure nothing is broken
+npm test -- --passWithNoTests

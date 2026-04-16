@@ -7,6 +7,7 @@ A modular system that generates physics-based artwork using a high-performance C
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow and branching strategy
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) - AWS deployment guide
 - [docs/README_PRODUCTION.md](docs/README_PRODUCTION.md) - Production setup and API reference
+- [docs/CODE_QUALITY.md](docs/CODE_QUALITY.md) - SonarCloud setup, testing strategy, and quality gates
 
 ## Project Overview
 
