@@ -4,7 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SimulationModule } from './simulation/simulation.module';
+import { SimulationModule } from './modules/simulation/simulation.module';
+import { StreamModule } from './modules/stream/stream.module';
 import { databaseConfig } from './config/database.config';
 
 @Module({
@@ -31,6 +32,7 @@ import { databaseConfig } from './config/database.config';
 
     // Feature modules
     SimulationModule,
+    StreamModule,
   ],
   controllers: [AppController],
   providers: [AppService],

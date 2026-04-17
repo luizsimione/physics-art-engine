@@ -1,16 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SimulationService } from './simulation.service';
-import { Repository } from 'typeorm';
+import { SimulationService } from '../../../src/modules/simulation/simulation.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Queue } from 'bullmq';
 import { getQueueToken } from '@nestjs/bullmq';
-import { SimulationJob, JobStatus } from './entities/simulation-job.entity';
-import { CreateSimulationDto } from './dto/create-simulation.dto';
+import {
+  SimulationJob,
+  JobStatus,
+} from '../../../src/modules/simulation/entities/simulation-job.entity';
+import { CreateSimulationDto } from '../../../src/modules/simulation/dto/create-simulation.dto';
 
 describe('SimulationService', () => {
   let service: SimulationService;
-  let jobRepository: Repository<SimulationJob>;
-  let simulationQueue: Queue;
 
   const mockRepository = {
     create: jest.fn(),
@@ -40,8 +39,6 @@ describe('SimulationService', () => {
     }).compile();
 
     service = module.get<SimulationService>(SimulationService);
-    jobRepository = module.get<Repository<SimulationJob>>(getRepositoryToken(SimulationJob));
-    simulationQueue = module.get<Queue>(getQueueToken('simulation'));
   });
 
   afterEach(() => {
@@ -370,9 +367,7 @@ describe('SimulationService', () => {
 
       await service.createJob(dto);
 
-      expect(mockRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ seed: 0 }),
-      );
+      expect(mockRepository.create).toHaveBeenCalledWith(expect.objectContaining({ seed: 0 }));
     });
 
     it('should handle very small dt values', async () => {
@@ -396,9 +391,7 @@ describe('SimulationService', () => {
 
       await service.createJob(dto);
 
-      expect(mockRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ dt: 0.0001 }),
-      );
+      expect(mockRepository.create).toHaveBeenCalledWith(expect.objectContaining({ dt: 0.0001 }));
     });
   });
 });

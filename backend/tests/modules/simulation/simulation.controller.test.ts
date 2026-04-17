@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SimulationController } from './simulation.controller';
-import { SimulationService } from './simulation.service';
-import { CreateSimulationDto } from './dto/create-simulation.dto';
+import { SimulationController } from '../../../src/modules/simulation/simulation.controller';
+import { SimulationService } from '../../../src/modules/simulation/simulation.service';
+import { CreateSimulationDto } from '../../../src/modules/simulation/dto/create-simulation.dto';
 import { NotFoundException } from '@nestjs/common';
-import { JobStatus } from './entities/simulation-job.entity';
+import { JobStatus } from '../../../src/modules/simulation/entities/simulation-job.entity';
 
 describe('SimulationController', () => {
   let controller: SimulationController;

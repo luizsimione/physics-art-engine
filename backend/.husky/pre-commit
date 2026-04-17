@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Run lint-staged (format + lint checks with 0 warnings allowed)
 npx lint-staged
 

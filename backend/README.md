@@ -11,6 +11,55 @@ NestJS backend API for orchestrating physics simulations and managing job queues
 - Automatic retry logic for failed jobs
 - File-based output storage
 
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── main.ts                    # Application entry point
+│   ├── app.module.ts              # Root module
+│   ├── app.controller.ts          # Root controller
+│   ├── app.service.ts             # Root service
+│   ├── config/                    # Configuration files
+│   │   └── database.config.ts
+│   └── modules/                   # Feature modules
+│       ├── simulation/            # Batch simulation module
+│       │   ├── simulation.module.ts
+│       │   ├── simulation.controller.ts
+│       │   ├── simulation.service.ts
+│       │   ├── simulation.processor.ts
+│       │   ├── dto/
+│       │   │   └── create-simulation.dto.ts
+│       │   └── entities/
+│       │       └── simulation-job.entity.ts
+│       └── stream/                # WebSocket streaming module
+│           ├── stream.module.ts
+│           ├── stream.gateway.ts
+│           ├── stream.service.ts
+│           └── dto/
+│               └── start-stream.dto.ts
+├── tests/                         # All test files (separate from source)
+│   ├── app.service.test.ts
+│   └── modules/
+│       ├── simulation/
+│       │   ├── simulation.controller.test.ts
+│       │   ├── simulation.service.test.ts
+│       │   └── simulation.processor.test.ts
+│       └── stream/
+│           ├── stream.gateway.test.ts
+│           └── stream.service.test.ts
+├── output/                        # Generated simulation outputs
+├── coverage/                      # Test coverage reports
+└── dist/                          # Compiled output
+```
+
+**Key Conventions:**
+- Feature modules in `src/modules/<feature>/`
+- Tests in `tests/` directory (not colocated)
+- Test files use `.test.ts` suffix
+- DTOs in `dto/` subdirectory within each module
+- Entities/schemas in `entities/` subdirectory
+
 ## Setup
 
 ### Install Dependencies
@@ -214,4 +263,98 @@ npm run lint
 
 # Format code
 npm run format
+```
+
+## WebSocket Streaming
+
+The backend includes a WebSocket gateway for real-time simulation streaming.
+
+### Testing WebSocket Streaming
+
+Use the included test client to verify streaming functionality:
+
+```bash
+# Basic test (50 particles, 30 FPS)
+node test-websocket-client.js
+
+# Custom configuration
+node test-websocket-client.js --particles 100 --steps 2000 --fps 60 --seed 42
+
+# Connect to remote server
+node test-websocket-client.js --url ws://your-server.com:3001
+```
+
+**Options:**
+- `--particles <n>` - Number of particles (default: 50)
+- `--steps <n>` - Number of simulation steps (default: 1000)
+- `--seed <n>` - Random seed for reproducibility (default: auto-generated)
+- `--fps <n>` - Target frames per second (default: 30)
+- `--url <url>` - WebSocket server URL (default: ws://localhost:3001)
+
+**Example Output:**
+```
+🚀 Physics Art Engine - WebSocket Test Client
+
+Configuration:
+  URL:       ws://localhost:3001
+  Particles: 50
+  Steps:     1000
+  FPS:       30
+
+✓ Connected to server
+→ Starting simulation stream...
+
+✓ Stream started: Simulation stream started
+→ Receiving frames...
+
+Frame    30 | Particles:  50 | Elapsed: 1.0s | FPS: 30.0
+  → Particle[0]: x=0.123, y=0.456, vx=0.012, vy=-0.034
+
+✓ Stream stopped: Simulation stream stopped
+
+Statistics:
+  Total Frames:   1000
+  Elapsed Time:   33.2s
+  Average FPS:    30.1
+  Expected FPS:   30
+```
+
+### WebSocket Events
+
+**Client → Server:**
+- `start-stream` - Start simulation with parameters
+- `stop-stream` - Stop current simulation
+
+**Server → Client:**
+- `stream-started` - Confirmation with parameters
+- `frame` - Real-time frame data
+- `stream-stopped` - Stream ended
+- `stream-error` - Error occurred
+
+### Integration with Frontend
+
+```javascript
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:3001');
+
+socket.on('connect', () => {
+  socket.emit('start-stream', {
+    numParticles: 100,
+    steps: 10000,
+    seed: 42,
+    fps: 30,
+    dt: 0.01
+  });
+});
+
+socket.on('frame', (data) => {
+  // data.frame: frame number
+  // data.particles: array of {x, y, vx, vy, mass}
+  updateVisualization(data.particles);
+});
+
+socket.on('stream-error', (error) => {
+  console.error('Stream error:', error.message);
+});
 ```

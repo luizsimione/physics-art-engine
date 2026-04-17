@@ -70,20 +70,24 @@ services:
       timeout: 10s
       retries: 3
 
-  # Frontend (Future)
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: physics-art-frontend
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     VITE_API_URL: http://localhost:3001
-  #     VITE_WS_URL: ws://localhost:3001
-  #   depends_on:
-  #     - backend
-  #   restart: unless-stopped
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: physics-art-frontend
+    ports:
+      - "3000:80"
+    environment:
+      VITE_BACKEND_URL: http://localhost:3001
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ML Service (Future)
   # ml-service:

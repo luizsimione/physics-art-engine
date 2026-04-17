@@ -11,13 +11,13 @@ A modular system that generates physics-based artwork using a high-performance C
 
 ## Project Overview
 
-**Current Status:** Backend complete, frontend planned
+**Current Status:** Full-stack application complete with oscilloscope visualization
 
 **Features:**
 - **Batch generation**: Async job queue for C++ simulation execution
 - **Job management**: REST API with status tracking, retry logic, persistence
-- **Real-time streaming**: WebSocket visualization (next milestone)
-- **Oscilloscope UI**: Retro CRT aesthetic with Three.js (planned)
+- **Real-time streaming**: WebSocket streaming with frame throttling (30 FPS default)
+- **Oscilloscope UI**: Retro CRT aesthetic with Three.js - three visualization modes
 
 ### Architecture
 
@@ -99,7 +99,9 @@ npm run start:dev
 # GET /jobs          - List all jobs
 # GET /jobs/:id/status - Get job status
 
-# WebSocket /stream - (Planned for Phase 3)
+# WebSocket Gateway
+# Connect to ws://localhost:3001
+# Events: start-stream, stop-stream, frame, stream-started, stream-stopped, stream-error
 ```
 
 **What's implemented:**
@@ -108,11 +110,14 @@ npm run start:dev
 - Redis + BullMQ job queue with retry logic
 - C++ process spawner service
 - REST API with 6 endpoints
+- WebSocket gateway with Socket.IO
+- Real-time frame streaming with throttling (30 FPS)
+- Backpressure handling and client disconnect cleanup
 - Input validation (class-validator)
 - Error handling and status tracking
 - Docker Compose for local development
 - GitHub Actions CI/CD pipeline
-- Unit tests (12 tests passing)
+- Unit tests (60 tests passing)
 - Husky pre-commit hooks (lint + test)
 
 ### Phase 3: Frontend (PLANNED)
@@ -159,11 +164,27 @@ physics-art-engine/
 │   ├── CMakeLists.txt      # CMake build config
 │   └── sim                 # Compiled binary
 │
-├── backend/                 # NestJS API (TODO)
+├── backend/                 # NestJS API (COMPLETED)
 │   ├── src/
-│   │   ├── simulation/     # Simulation orchestration
-│   │   ├── stream/         # WebSocket streaming
-│   │   └── app.module.ts   # Root module
+│   │   ├── main.ts         # Application entry point
+│   │   ├── app.module.ts   # Root module
+│   │   ├── config/         # Database & environment config
+│   │   └── modules/        # Feature modules
+│   │       ├── simulation/ # Batch job orchestration
+│   │       │   ├── simulation.controller.ts
+│   │       │   ├── simulation.service.ts
+│   │       │   ├── simulation.processor.ts
+│   │       │   ├── dto/    # Data transfer objects
+│   │       │   └── entities/
+│   │       └── stream/     # WebSocket streaming
+│   │           ├── stream.gateway.ts
+│   │           ├── stream.service.ts
+│   │           └── dto/    # Stream DTOs
+│   ├── tests/              # All test files (separate from source)
+│   │   ├── modules/
+│   │   │   ├── simulation/
+│   │   │   └── stream/
+│   │   └── app.service.test.ts
 │   ├── package.json
 │   └── Dockerfile
 │
@@ -210,23 +231,23 @@ physics-art-engine/
 - [x] Add unit tests and E2E testing
 - [x] Configure Husky pre-commit hooks (lint + test + type-check)
 
-### Milestone 3: WebSocket Streaming (NEXT)
-- [ ] Integrate WebSocket gateway in NestJS
-- [ ] Implement real-time streaming orchestration
-- [ ] Add frame throttling (30 FPS)
-- [ ] Handle backpressure and client disconnects
-- [ ] Test concurrent streaming sessions
+### Milestone 3: WebSocket Streaming (COMPLETED)
+- [x] Integrate WebSocket gateway in NestJS
+- [x] Implement real-time streaming orchestration
+- [x] Add frame throttling (30 FPS)
+- [x] Handle backpressure and client disconnects
+- [x] Test concurrent streaming sessions
 
-### Milestone 4: Oscilloscope Frontend (PLANNED)
-- [ ] Initialize React + Vite + TypeScript
-- [ ] Setup Three.js scene with CRT oscilloscope aesthetic
-- [ ] Implement WebSocket client connection
-- [ ] Build 3 rendering modes:
-  - [ ] Waveform Mode (X position over time)
-  - [ ] Multi-Channel Mode (multiple particle traces)
-  - [ ] Vector Scope Mode (X vs Y Lissajous patterns)
-- [ ] Add control panel (start/stop, seed, mode toggle)
-- [ ] Optimize rendering with sliding window buffer
+### Milestone 4: Oscilloscope Frontend (COMPLETED)
+- [x] Initialize React + Vite + TypeScript
+- [x] Setup Three.js scene with CRT oscilloscope aesthetic
+- [x] Implement WebSocket client connection
+- [x] Build 3 rendering modes:
+  - [x] Waveform Mode (X position over time)
+  - [x] Multi-Channel Mode (multiple particle traces)
+  - [x] Vector Scope Mode (X vs Y Lissajous patterns)
+- [x] Add control panel (start/stop, seed, mode toggle)
+- [x] Optimize rendering with sliding window buffer
 
 ### Milestone 5: Docker Orchestration (COMPLETED)
 - [x] Create Dockerfiles for each service
@@ -417,22 +438,85 @@ Retrieve simulation results.
 
 ### WebSocket Events
 
+Connect to `ws://localhost:3001` (or your deployment URL).
+
 #### Client → Server: `start-stream`
+Start a real-time simulation stream.
+
+**Request:**
 ```json
 {
   "numParticles": 100,
+  "steps": 10000,
   "seed": 42,
-  "fps": 30
+  "fps": 30,
+  "dt": 0.01
+}
+```
+
+**Parameters:**
+- `numParticles` (required): Number of particles (1-1000)
+- `steps` (optional): Number of simulation steps (default: 10000)
+- `seed` (optional): Random seed for reproducibility (auto-generated if omitted)
+- `fps` (optional): Target frames per second (1-60, default: 30)
+- `dt` (optional): Time step size (0.001-0.1, default: 0.01)
+
+#### Client → Server: `stop-stream`
+Stop the current simulation stream.
+
+**Request:**
+```json
+{}
+```
+
+#### Server → Client: `stream-started`
+Confirmation that the stream has started.
+
+**Response:**
+```json
+{
+  "message": "Simulation stream started",
+  "params": {
+    "numParticles": 100,
+    "steps": 10000,
+    "seed": 42,
+    "fps": 30,
+    "dt": 0.01
+  }
 }
 ```
 
 #### Server → Client: `frame`
+Real-time frame data (emitted at target FPS).
+
+**Response:**
 ```json
 {
   "frame": 123,
   "particles": [
-    {"x": 0.5, "y": 1.2, "vx": 0.1, "vy": -0.2, "mass": 1.5}
+    {"x": 0.5, "y": 1.2, "vx": 0.1, "vy": -0.2, "mass": 1.5},
+    {"x": -0.3, "y": 0.8, "vx": -0.05, "vy": 0.15, "mass": 2.0}
   ]
+}
+```
+
+#### Server → Client: `stream-stopped`
+Confirmation that the stream has stopped.
+
+**Response:**
+```json
+{
+  "message": "Simulation stream stopped"
+}
+```
+
+#### Server → Client: `stream-error`
+Error occurred during streaming.
+
+**Response:**
+```json
+{
+  "message": "Error description"
 }
 ```
 
@@ -459,6 +543,6 @@ Built as a demonstration of distributed systems design, combining high-performan
 
 ---
 
-**Status**: Phase 1 Complete | Phase 2-6 In Progress
+**Status**: Milestones 1-4 Complete ✓ Full-Stack Physics Art Engine Ready
 
-**Last Updated**: April 15, 2026
+**Last Updated**: April 16, 2026

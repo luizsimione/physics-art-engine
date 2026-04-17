@@ -1,12 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SimulationProcessor } from './simulation.processor';
-import { SimulationService } from './simulation.service';
+import { SimulationProcessor } from '../../../src/modules/simulation/simulation.processor';
+import { SimulationService } from '../../../src/modules/simulation/simulation.service';
 import { Job } from 'bullmq';
-import { JobStatus } from './entities/simulation-job.entity';
+import { JobStatus } from '../../../src/modules/simulation/entities/simulation-job.entity';
 
 describe('SimulationProcessor', () => {
   let processor: SimulationProcessor;
-  let service: SimulationService;
 
   const mockSimulationService = {
     updateJobStatus: jest.fn(),
@@ -25,7 +24,6 @@ describe('SimulationProcessor', () => {
     }).compile();
 
     processor = module.get<SimulationProcessor>(SimulationProcessor);
-    service = module.get<SimulationService>(SimulationService);
 
     jest.clearAllMocks();
   });
